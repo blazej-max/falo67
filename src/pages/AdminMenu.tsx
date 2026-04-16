@@ -14,8 +14,8 @@ export default function AdminMenu() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Admin Panel 🔥</h1>
-      <p>Jesteś zalogowany</p>
+      <h1>Admin Panel </h1>
+      <p>Jestes zalogowany</p>
     </div>
   );
 }
