@@ -13,19 +13,31 @@ export default function AdminMenu() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "/auth";
+      // 🔥 KLUCZ: czekamy aż Firebase się ustabilizuje
+      if (user) {
+        setLoading(false);
         return;
       }
 
-      setLoading(false);
+      // 🔥 NIE ROBIMY NATYCHMIAST REDIRECTU
+      // dajemy czas Firebase (fix pętli)
+      const timeout = setTimeout(() => {
+        if (!auth.currentUser) {
+          window.location.href = "/auth";
+        }
+        setLoading(false);
+      }, 300);
+
+      return () => clearTimeout(timeout);
     });
 
     return () => unsub();
   }, []);
 
-  // 🔥 WAŻNE: blokuje render zanim Firebase sprawdzi usera
-  if (loading) return <p style={{ padding: 20 }}>Ładowanie...</p>;
+  // blokuje render zanim Firebase sprawdzi usera
+  if (loading) {
+    return <p style={{ padding: 20 }}>Ładowanie...</p>;
+  }
 
   const addPizza = () => {
     if (!newPizza) return;
