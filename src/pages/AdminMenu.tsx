@@ -13,28 +13,17 @@ export default function AdminMenu() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      // 🔥 KLUCZ: czekamy aż Firebase się ustabilizuje
       if (user) {
         setLoading(false);
-        return;
-      }
-
-      // 🔥 NIE ROBIMY NATYCHMIAST REDIRECTU
-      // dajemy czas Firebase (fix pętli)
-      const timeout = setTimeout(() => {
-        if (!auth.currentUser) {
-          window.location.href = "/auth";
-        }
+      } else {
         setLoading(false);
-      }, 300);
-
-      return () => clearTimeout(timeout);
+        window.location.href = "/auth";
+      }
     });
 
     return () => unsub();
   }, []);
 
-  // blokuje render zanim Firebase sprawdzi usera
   if (loading) {
     return <p style={{ padding: 20 }}>Ładowanie...</p>;
   }

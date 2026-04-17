@@ -1,133 +1,79 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { toast } from "sonner";
+import { auth } from "@/firebase";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 
-const Auth = () => {
+export default function Auth() {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
         navigate("/admin");
       }
-    };
+    });
 
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
-          navigate("/admin");
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    return () => unsub();
   }, [navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin`,
-          },
-        });
-
-        if (error) throw error;
-
-        toast.success(
-          "Konto utworzone! Możesz się teraz zalogować."
-        );
+      if (mode === "login") {
+        await signInWithEmailAndPassword(auth, email, password);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
-        // 🔥 ważne: NIE wymuszamy redirect tutaj
-        // robi go listener wyżej
+        await createUserWithEmailAndPassword(auth, email, password);
       }
+
+      navigate("/admin");
     } catch (err: any) {
-      toast.error(err.message ?? "Błąd logowania");
+      alert(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-6">
-          <h1 className="font-serif text-3xl font-bold">Panel właściciela</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            {mode === "signin"
-              ? "Zaloguj się aby edytować menu"
-              : "Utwórz konto"}
-          </p>
-        </div>
+    <div style={{ padding: 20 }}>
+      <h1>{mode === "login" ? "Login" : "Register"}</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+      <form onSubmit={handleAuth}>
+        <input
+          placeholder="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-          <div>
-            <Label htmlFor="password">Hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+        <input
+          placeholder="hasło"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "..." : mode === "signin" ? "Zaloguj się" : "Zarejestruj"}
-          </Button>
-        </form>
-
-        <button
-          type="button"
-          onClick={() =>
-            setMode(mode === "signin" ? "signup" : "signin")
-          }
-          className="w-full text-sm text-muted-foreground hover:text-foreground mt-4"
-        >
-          {mode === "signin"
-            ? "Nie masz konta? Utwórz"
-            : "Masz już konto? Zaloguj się"}
+        <button disabled={loading}>
+          {mode === "login" ? "Zaloguj" : "Zarejestruj"}
         </button>
-      </Card>
-    </main>
-  );
-};
+      </form>
 
-export default Auth;
+      <button
+        onClick={() =>
+          setMode(mode === "login" ? "register" : "login")
+        }
+      >
+        Zmień tryb
+      </button>
+    </div>
+  );
+}
