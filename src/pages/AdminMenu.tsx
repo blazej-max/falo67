@@ -15,13 +15,17 @@ export default function AdminMenu() {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "/auth";
-      } else {
-        setLoading(false);
+        return;
       }
+
+      setLoading(false);
     });
 
     return () => unsub();
   }, []);
+
+  // 🔥 WAŻNE: blokuje render zanim Firebase sprawdzi usera
+  if (loading) return <p style={{ padding: 20 }}>Ładowanie...</p>;
 
   const addPizza = () => {
     if (!newPizza) return;
@@ -37,8 +41,6 @@ export default function AdminMenu() {
     await signOut(auth);
     window.location.href = "/auth";
   };
-
-  if (loading) return <p style={{ padding: 20 }}>Ładowanie...</p>;
 
   return (
     <div style={{ padding: 20 }}>
