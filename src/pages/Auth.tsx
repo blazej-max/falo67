@@ -16,10 +16,10 @@ const Auth = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate("/admin/menu");
+      if (session) navigate("/admin");
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/admin/menu");
+      if (session) navigate("/admin");
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -32,7 +32,7 @@ const Auth = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin/menu` },
+          options: { emailRedirectTo: `${window.location.origin}/admin` },
         });
         if (error) throw error;
         toast.success("Konto utworzone! Skontaktuj się z administratorem aby uzyskać uprawnienia.");
